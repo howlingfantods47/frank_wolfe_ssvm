@@ -1,0 +1,1 @@
+Usage: ./ocr train_file group_size iter_max cutting_planes_max (group_size = +ve integer or -1 for simple Frank_Wolfe)
