@@ -13,8 +13,8 @@ OCR_OBJS := $(patsubst %.cpp, %.o, $(OCR_SRC))
 LSIS_OBJS := $(patsubst %.cpp, %.o, $(LSIS_SRC))
 
 
-#CFLAGS := -O0 -ggdb
-CFLAGS := -O3 -D_NDEBUG 
+CFLAGS := -O0 -ggdb
+#CFLAGS := -O3 -D_NDEBUG 
 CXX ?= g++
 LIBS := 
 INCLUDES := 
