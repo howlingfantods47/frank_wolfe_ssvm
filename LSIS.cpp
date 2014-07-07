@@ -47,9 +47,9 @@ vector<Sample> samples;
 int num_train;
 int dimension;
 int sp_dim = 649;
+typedef Graph<double, double, double> GraphType;
 
 void max_function_lsis(int current, double* w, double* a, void* user_arg){
-	typedef Graph<double, double, double> GraphType;
 	Sample cur_sample = samples[current];
 	int n = cur_sample.num_sp;
 	int m = cur_sample.num_edges;
@@ -59,8 +59,8 @@ void max_function_lsis(int current, double* w, double* a, void* user_arg){
 	}
 	double E0, E1;
 	for(int i=0; i<n; ++i){
-		E0 = DotProduct(&(cur_sample.features[i][0]), w, sp_dim) - 1.0/n*((cur_sample.labels[i]!=0)?1:0);
-		E1 = DotProduct(&(cur_sample.features[i][0]), w+sp_dim, sp_dim) - 1.0/n*((cur_sample.labels[i]!=1)?1:0);
+		E0 =  -1*DotProduct(&(cur_sample.features[i][0]), w, sp_dim) - 1.0/n*((cur_sample.labels[i]!=0)?1:0);
+		E1 = -1*DotProduct(&(cur_sample.features[i][0]), w+sp_dim, sp_dim) - 1.0/n*((cur_sample.labels[i]!=1)?1:0);
 		if(E0 < E1){
 			g -> add_tweights(i, E1-E0, 0);
 		}
@@ -83,14 +83,14 @@ void max_function_lsis(int current, double* w, double* a, void* user_arg){
 	for(int i=0; i<n; ++i){
 		if(cur_sample.labels[i] == 0 && g -> what_segment(i) == 1){
 			for(int j=0; j<sp_dim; ++j){
-				a[j] += cur_sample.features[i][j];
-				a[sp_dim + j] -= cur_sample.features[i][j];
+				a[j] -= cur_sample.features[i][j];
+				a[sp_dim + j] += cur_sample.features[i][j];
 			}
 		}
 		else if(cur_sample.labels[i] == 1 && g -> what_segment(i) == 0){
 			for(int j=0; j<sp_dim; ++j){
-				a[j] -= cur_sample.features[i][j];
-				a[sp_dim + j] += cur_sample.features[i][j];
+				a[j] += cur_sample.features[i][j];
+				a[sp_dim + j] -= cur_sample.features[i][j];
 			}
 		}
 	}
@@ -101,13 +101,19 @@ void max_function_lsis(int current, double* w, double* a, void* user_arg){
 		}
 	}
 	loss = loss/n;
+	//absorbing pairwise terms into loss, as they also correspond to a constant term in the weight vector.
+	for(int e=0; e<m; ++e){
+		p = cur_sample.edges[e].s;
+		q = cur_sample.edges[e].t;
+		loss += ((cur_sample.labels[p] != cur_sample.labels[q])?1:0) - ((g -> what_segment(p) != g -> what_segment(q))?1:0);
+	}
 	a[dimension] = loss;
 	delete g;
 }
 
 
 void read_lsis(string filename, vector<Sample>& data){
-	ifstream infile(filename+"superpixel_count.txt");
+	ifstream infile((filename+"superpixel_count.txt").c_str());
 	int nump;
 	string line;
 	istringstream iss;
@@ -122,7 +128,7 @@ void read_lsis(string filename, vector<Sample>& data){
 	}
 	infile.close();
 	num_train = count;
-	infile.open(filename+"edge_count.txt");
+	infile.open((filename+"edge_count.txt").c_str());
 	if(infile.is_open()){
 		for(int i=0; i<num_train; ++i){
 			infile >> data[i].num_edges;
@@ -139,7 +145,7 @@ void read_lsis(string filename, vector<Sample>& data){
 			data[i].features[j].resize(sp_dim);
 		}
 	}
-	infile.open(filename+"labels.txt");
+	infile.open((filename+"labels.txt").c_str());
 	if(infile.is_open()){
 		for(int i=0; i<data.size(); ++i){
 			for(int j=0; j<data[i].labels.size(); ++j){
@@ -148,7 +154,7 @@ void read_lsis(string filename, vector<Sample>& data){
 		}
 	}
 	infile.close();
-	infile.open(filename+"superpixel_structure.txt");
+	infile.open((filename+"superpixel_structure.txt").c_str());
 	if(infile.is_open()){
 		for(int i=0; i<data.size(); ++i){
 			for(int j=0; j<data[i].edges.size(); ++j){
@@ -161,7 +167,7 @@ void read_lsis(string filename, vector<Sample>& data){
 		}
 	}
 	infile.close();
-	infile.open(filename+"features.txt");
+	infile.open((filename+"features.txt").c_str());
 	if(infile.is_open()){
 		for(int i=0; i<data.size(); ++i){
 			for(int j=0; j<data[i].features.size(); ++j){
@@ -204,7 +210,6 @@ int main(int argc, char* argv[]){
 	double* w_opt;
 	cout << "time_before_bound   iteration   lower_bound    upper_bound    duality_gap    time_after_bound" <<endl;
 	w_opt = svm_ocr.Solve();
-	delete w_opt;
 	return 0;
 }
 
