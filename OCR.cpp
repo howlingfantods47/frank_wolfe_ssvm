@@ -127,7 +127,7 @@ void feature_map(vector< vector<double> >& pixel_grid, vector<int>& labels, vect
 	phi[num_labels*grid_size + num_labels + labels[chain_length-1]] = 1;
 	int offset = num_labels*grid_size + 2*num_labels;
 	for(int i=0; i<chain_length-1; ++i){
-		int id = labels[i] + num_labels*labels[i+1];
+		int id = num_labels*labels[i] + labels[i+1];
 		phi[offset + id] += 1;
 	}
 }
@@ -156,7 +156,7 @@ void max_function_ocr(int current, double* w, double* a, void* user_arg){
 	int offset = grid_size*num_labels + 2*num_labels;
 	for(int i=0; i<num_labels; ++i){
 		for(int j=0; j<num_labels; ++j){
-			theta_pairwise[j][i] = w[offset + i*num_labels + j];
+			theta_pairwise[i][j] = w[offset + i*num_labels + j];
 		}
 	}
 	// add normalized Hamming loss terms to unaries
@@ -204,7 +204,7 @@ void read_ocr(string filename, vector<Sample>& data){
 	//cout << "Reading features..." << endl;
 	//cout << sx << " features of dimension " << sy << " each found..." << endl;
 	if(infile.is_open()){
-		while(getline(infile, line)){
+		while(getline(infile, line) && count < 10){
 			count++;
 			istringstream iss2(line);
 			iss2 >> dump;

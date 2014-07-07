@@ -28,6 +28,8 @@
 #include "SVM.h"
 #include "SVMutils.h"
 
+#include "graph.h"
+
 using namespace std;
 
 struct Edge{
@@ -45,6 +47,38 @@ vector<Sample> samples;
 int num_train;
 int dimension;
 int sp_dim = 649;
+
+void max_function_lsis(int current, double* w, double* a, void* user_arg){
+	typedef Graph<double, double, double> GraphType;
+	Sample cur_sample = samples[current];
+	int n = cur_sample.num_sp;
+	int m = cur_sample.num_edges;
+	GraphType *g = new GraphType(n, m);
+	for(int i=0; i<n; ++i){
+		g -> add_node();
+	}
+	double E0, E1;
+	for(int i=0; i<n; ++i){
+		E0 = DotProduct(&(cur_sample.features[i][0]), w, sp_dim) - 1.0/n*((cur_sample.labels[i]!=0)?1:0);
+		E1 = DotProduct(&(cur_sample.features[i][0]), w+sp_dim, sp_dim) - 1.0/n*((cur_sample.labels[i]!=1)?1:0);
+		if(E0 < E1){
+			g -> add_tweights(i, E1-E0, 0);
+		}
+		else{
+			g -> add_tweights(i, 0, E0-E1);
+		}
+	}
+	int i,j;
+	for(int e=0; e<m; ++e){
+		i = cur_sample.edges[e].s;
+		j = cur_sample.edges[e].t;
+		g -> add_tweights(i, 1, 0);
+		g -> add_tweights(j, 0, 1);
+		g -> add_edge(i, j, 2, 0);
+	}
+	int flow = g -> maxflow();
+}
+
 
 void read_lsis(string filename, vector<Sample>& data){
 	ifstream infile(filename+"superpixel_count.txt");
@@ -134,18 +168,29 @@ int main(int argc, char* argv[]){
 
 			  }*/
 	read_lsis("datasets/LSIS/", samples);
-	/*  dimension = num_labels*grid_size + 2*num_labels + num_labels*num_labels;
-		 num_train = samples.size();
-		 double lambda = 1;
-		 if(group_size == -1)    group_size = num_train;
-		 SVM svm_ocr(dimension, num_train, lambda, max_function_ocr, NULL, NULL, group_size);
-		 svm_ocr.options.iter_max = iter_max;
-		 svm_ocr.options.cutting_planes_max = cutting_planes_max;
-		 svm_ocr.options.inner_iter_max = inner_iter ;
-		 svm_ocr.options.callback_freq = 1;
-		 double* w_opt;
-		 cout << "time_before_bound   iteration   lower_bound    upper_bound    duality_gap    time_after_bound" <<endl;
-		 w_opt = svm_ocr.Solve();*/
+	dimension = 2*sp_dim;
+	num_train = samples.size();
+	double* w = new double[dimension];
+	double lambda = 1;
+	for(int i=0; i<dimension/2; ++i){
+		w[i] = 1;
+	}
+	for(int i=dimension/2; i<dimension; ++i){
+		w[i] = 0;
+	}
+	double* a = new double[dimension+1];
+	max_function_lsis(0, w, a, NULL);
+	delete a;
+	delete w;
+	/*  if(group_size == -1)    group_size = num_train;
+	SVM svm_ocr(dimension, num_train, lambda, max_function_ocr, NULL, NULL, group_size);
+	svm_ocr.options.iter_max = iter_max;
+	svm_ocr.options.cutting_planes_max = cutting_planes_max;
+	svm_ocr.options.inner_iter_max = inner_iter ;
+	svm_ocr.options.callback_freq = 1;
+	double* w_opt;
+	cout << "time_before_bound   iteration   lower_bound    upper_bound    duality_gap    time_after_bound" <<endl;
+	w_opt = svm_ocr.Solve();*/
 	return 0;
 }
 

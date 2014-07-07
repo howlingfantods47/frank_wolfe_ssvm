@@ -17,7 +17,8 @@ CFLAGS := -O0 -ggdb
 #CFLAGS := -O3 -D_NDEBUG 
 CXX ?= g++
 LIBS := 
-INCLUDES := 
+LIBS_LSIS := -L. -lmaxflow
+INCLUDES := -Imaxflow-v3.03.src/
 LIBDIR := 
 
 # Add librt if the target platform is not Darwin (OS X)
@@ -37,7 +38,7 @@ ocr: ${OCR_OBJS}
 	$(CXX) $(CFLAGS) ${LIBDIR} -o $@ ${OCR_OBJS} ${LIBS}
 
 lsis: ${LSIS_OBJS}
-	$(CXX) $(CFLAGS) ${LIBDIR} -o $@ ${LSIS_OBJS} ${LIBS}
+	$(CXX) $(CFLAGS) ${LIBDIR} ${LIBS_LSIS} -o $@ ${LSIS_OBJS} ${LIBS} 
 
 .cpp.o:
 	$(CXX) $(CFLAGS) ${INCLUDES} $< -c -o $@

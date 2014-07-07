@@ -137,7 +137,7 @@ int main(){
     //int group_size = num_train;
     SVM svm_usps(dimension-1, num_train, lambda, max_function_multiclass, NULL, NULL, group_size);
     svm_usps.options.iter_max = 50;
-    svm_usps.options.cutting_planes_max = 0;
+    svm_usps.options.cutting_planes_max = 10;
     svm_usps.options.inner_iter_max = svm_usps.options.cutting_planes_max + 1 ;
     svm_usps.options.callback_freq = 1;
     cout << "time_before_bound   iteration   lower_bound    upper_bound    duality_gap    time_after_bound" <<endl;
